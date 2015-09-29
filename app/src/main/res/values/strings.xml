@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">FairyTaleClient</string>
+    <string name="title_activity_main">FairyTale</string>
+    <string name="hello_world">Hello world!</string>
+
+<!-- Preferences start-->
+    <string name="action_settings">Settings</string>
+    <!-- Server address-->
+    <string name="key_server_address">server_address</string>
+    <string name="default_value_server_address">10.0.2.2</string>
+    <string name="summary_server_address">eg: 10.0.2.2 or example.my</string>
+    <string name="title_server_address">Server address</string>
+
+    <!-- Server port-->
+    <string name="key_server_port">server_port</string>
+    <string name="default_value_server_port">8080</string>
+    <string name="summary_server_port">eg: 8080</string>
+    <string name="title_server_port">Server port</string>
+    <string name="title_activity_new_story">NewStoryActivity</string>
+<!-- Preferences end-->
+
+<!-- Read/create story activities-->
+    <string name="action_create_story">New story</string>
+    <string name="textView_text_StoryName">Story name</string>
+    <string name="textView_text_StoryText">Text</string>
+    <string name="button_text_Create">Create</string>
+    <string name="header">Header %d</string>
+
+</resources>

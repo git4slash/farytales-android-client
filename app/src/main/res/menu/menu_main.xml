@@ -1,0 +1,14 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="tales.MainActivity">
+
+    <item android:id="@+id/action_settings"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
+
+    <item android:id="@+id/action_new_story"
+        android:title="@string/action_create_story"
+        android:icon="@android:drawable/btn_plus"
+        app:showAsAction="ifRoom" />
+</menu>
