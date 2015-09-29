@@ -1,7 +1,9 @@
 package tales;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -59,16 +61,8 @@ public class ExpandableListActivity extends MyListAct {
         animationAdapter.getViewAnimator().setInitialDelayMillis(INITIAL_DELAY_MILLIS);
         getListView().setAdapter(animationAdapter);
 
-        performGetUserTalesRequest("tales");
+        performGetUserTalesRequest();
         Toast.makeText(this, "Tap on cards to expand or collapse them", Toast.LENGTH_LONG).show();
-    }
-
-    private void performGetUserTalesRequest(String searchQuery) {
-
-        GetUserTalesRequest request = new GetUserTalesRequest(searchQuery);
-        mLastRequestCacheKey = request.createCacheKey();
-        mSpiceManager.execute(request, mLastRequestCacheKey,
-                DurationInMillis.ONE_MINUTE, new UserTalesRequestListener());
     }
 
     @Override
@@ -144,8 +138,18 @@ public class ExpandableListActivity extends MyListAct {
         }
     }
 
+    private void performGetUserTalesRequest() {
+        // todo load from context user name
+        final String serverAddress = Util.currentServerProperty(this) + "/dsyer/tales";
+        GetUserTalesRequest request = new GetUserTalesRequest(serverAddress);
+        mLastRequestCacheKey = request.createCacheKey();
+        mSpiceManager.execute(request, mLastRequestCacheKey,
+                DurationInMillis.ONE_MINUTE, new UserTalesRequestListener());
+    }
+
     private void performPostTaleRequest(Tale tale) {
-        PostTaleRequest postTaleRequest = new PostTaleRequest(tale);
+        final String serverAddress = Util.currentServerProperty(this);
+        PostTaleRequest postTaleRequest = new PostTaleRequest(serverAddress, tale);
         mSpiceManager.execute(postTaleRequest, new PostTaleListener());
     }
 
@@ -180,10 +184,11 @@ public class ExpandableListActivity extends MyListAct {
             Log.e(LOG_TAG, "Error during request: " + e.getLocalizedMessage());
         }
 
+        // user hat created tale, reload tales list
         @Override
         public void onRequestSuccess(Tale tale) {
             Toast.makeText(ExpandableListActivity.this, "Tale created", Toast.LENGTH_SHORT).show();
-            performGetUserTalesRequest("tales");
+            performGetUserTalesRequest();
         }
     }
 }

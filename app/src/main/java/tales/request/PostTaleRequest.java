@@ -1,5 +1,7 @@
 package tales.request;
 
+import android.util.Log;
+
 import com.octo.android.robospice.request.springandroid.SpringAndroidSpiceRequest;
 
 import tales.model.Tale;
@@ -11,15 +13,18 @@ import tales.model.Tale;
 public class PostTaleRequest extends SpringAndroidSpiceRequest<Tale> {
 
     private Tale tale;
-
-    public PostTaleRequest(Tale tale) {
+    private final String request;
+    
+    public PostTaleRequest(String request, Tale tale) {
         super(Tale.class);
         this.tale = tale;
+        this.request = request;
     }
 
     @Override
     public Tale loadDataFromNetwork() throws Exception {
-        return getRestTemplate().postForObject("http://10.0.2.2:8080",
+        Log.d(this.getClass().getCanonicalName(), request);
+        return getRestTemplate().postForObject(request,
                 tale, Tale.class);
     }
 }

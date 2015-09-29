@@ -10,24 +10,18 @@ import tales.model.UserList;
  */
 public class GetUsersRequest extends SpringAndroidSpiceRequest<UserList> {
 
-    private String cacheStr = "usersReq";
+    private final String request;
 
-    public GetUsersRequest(String user) {
+    public GetUsersRequest(String request) {
         super(UserList.class);
-        this.cacheStr = user;
-    }
-
-    public GetUsersRequest() {
-        super(UserList.class);
+        this.request = request;
     }
 
     @Override
     public UserList loadDataFromNetwork() throws Exception {
 
-        String url = "http://10.0.2.2:8080/users";
-        System.out.println("UURRLL: "+ url);
 
-        return getRestTemplate().getForObject(url, UserList.class);
+        return getRestTemplate().getForObject(request, UserList.class);
     }
 
     /**
@@ -36,6 +30,6 @@ public class GetUsersRequest extends SpringAndroidSpiceRequest<UserList> {
      * @return
      */
     public String createCacheKey() {
-        return "Users." + cacheStr;
+        return "Get accounts from server: " + request;
     }
 }

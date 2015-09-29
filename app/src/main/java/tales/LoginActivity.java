@@ -66,7 +66,8 @@ public class LoginActivity extends Activity {
     }
 
     private void performGetAccountsRequest() {
-        GetUsersRequest request = new GetUsersRequest();
+        final String uri = Util.currentServerProperty(this) + "/users";
+        GetUsersRequest request = new GetUsersRequest(uri);
         mLastUsersRequestCacheKey = request.createCacheKey();
         mSpiceManager.execute(request, mLastUsersRequestCacheKey,
                 DurationInMillis.ONE_MINUTE, new GetAccountsRequestListener());

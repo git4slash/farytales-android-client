@@ -1,29 +1,27 @@
 package tales.request;
 
+import android.util.Log;
+
 import com.octo.android.robospice.request.springandroid.SpringAndroidSpiceRequest;
 
 import tales.model.TaleList;
-
 
 /**
  * Created by Aleksandr Subbotin on 28.09.2015.
  */
 public class GetUserTalesRequest extends SpringAndroidSpiceRequest<TaleList> {
 
-    private String user;
+    private String request;
 
-    public GetUserTalesRequest(String user) {
+    public GetUserTalesRequest(String request) {
         super(TaleList.class);
-        this.user = user;
+        this.request = request;
     }
 
     @Override
     public TaleList loadDataFromNetwork() throws Exception {
-
-        String url = "http://10.0.2.2:8080/dsyer/tales";
-        System.out.println("UURRLL: "+ url);
-
-        return getRestTemplate().getForObject(url, TaleList.class);
+        Log.d(this.getClass().getCanonicalName(), request);
+        return getRestTemplate().getForObject(request, TaleList.class);
     }
 
     /**
@@ -32,6 +30,6 @@ public class GetUserTalesRequest extends SpringAndroidSpiceRequest<TaleList> {
      * @return
      */
     public String createCacheKey() {
-        return "Users." + user;
+        return "Tales from: " + request;
     }
 }
