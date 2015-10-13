@@ -61,7 +61,7 @@ public class ExpandableListActivity extends MyListAct {
         animationAdapter.getViewAnimator().setInitialDelayMillis(INITIAL_DELAY_MILLIS);
         getListView().setAdapter(animationAdapter);
 
-        performGetUserTalesRequest();
+        performGetUserTalesRequest(true);
         Toast.makeText(this, "Tap on cards to expand or collapse them", Toast.LENGTH_LONG).show();
     }
 
@@ -133,23 +133,25 @@ public class ExpandableListActivity extends MyListAct {
             switch (requestCode) {
                 case REQUEST_CODE_CREATE_TALE:
                     Tale tale = (Tale) data.getSerializableExtra(INTENT_TALE_KEY);
+                    Log.d(this.getClass().getSimpleName(), "Tale: " + tale.getName() + " | " + tale.getText());
                     performPostTaleRequest(tale);
             }
         }
     }
 
-    private void performGetUserTalesRequest() {
+    private void performGetUserTalesRequest(boolean isUsingCachedRequest) {
         // todo load from context user name
         final String serverAddress = Util.currentServerProperty(this) + "/dsyer/tales";
         GetUserTalesRequest request = new GetUserTalesRequest(serverAddress);
-        mLastRequestCacheKey = request.createCacheKey();
+        mLastRequestCacheKey = isUsingCachedRequest ? request.createCacheKey() : null;
         mSpiceManager.execute(request, mLastRequestCacheKey,
                 DurationInMillis.ONE_MINUTE, new UserTalesRequestListener());
     }
 
     private void performPostTaleRequest(Tale tale) {
         final String serverAddress = Util.currentServerProperty(this);
-        PostTaleRequest postTaleRequest = new PostTaleRequest(serverAddress, tale);
+        final String request = serverAddress + "/dsyer/tales/";
+        PostTaleRequest postTaleRequest = new PostTaleRequest(request, tale);
         mSpiceManager.execute(postTaleRequest, new PostTaleListener());
     }
 
@@ -166,7 +168,7 @@ public class ExpandableListActivity extends MyListAct {
 
         @Override
         public void onRequestSuccess(TaleList taleList) {
-            // userList could be null just if contentManager.getFromCache(...)
+            // taleList could be null just if contentManager.getFromCache(...)
             // doesn't return anything.
             if (taleList == null) return;
             mExpandableListItemAdapter.clear();
@@ -188,7 +190,7 @@ public class ExpandableListActivity extends MyListAct {
         @Override
         public void onRequestSuccess(Tale tale) {
             Toast.makeText(ExpandableListActivity.this, "Tale created", Toast.LENGTH_SHORT).show();
-            performGetUserTalesRequest();
+            performGetUserTalesRequest(false);
         }
     }
 }
