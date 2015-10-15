@@ -2,11 +2,13 @@ package tales.act;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.nhaarman.listviewanimations.itemmanipulation.expandablelistitem.ExpandableListItemAdapter;
+import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.undo.UndoAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +20,10 @@ import tales.model.Tale;
 /**
  * Created by Aleksandr Subbotin on 28.09.2015.
  */
-public class MyExpandableListItemAdapter extends ExpandableListItemAdapter<Tale>{
+public class MyExpandableListItemAdapter
+        extends ExpandableListItemAdapter<Tale>
+        implements UndoAdapter{
+
     private final Context mContext;
     private List<Tale> tales;
 
@@ -64,5 +69,21 @@ public class MyExpandableListItemAdapter extends ExpandableListItemAdapter<Tale>
         textView.setText(getItem(position).getText());
 
         return textView;
+    }
+
+    @NonNull
+    @Override
+    public View getUndoView(final int position, final View convertView, @NonNull final ViewGroup parent) {
+        View view = convertView;
+        if (view == null) {
+            view = LayoutInflater.from(mContext).inflate(R.layout.undo_row, parent, false);
+        }
+        return view;
+    }
+
+    @NonNull
+    @Override
+    public View getUndoClickView(@NonNull final View view) {
+        return view.findViewById(R.id.undo_row_undobutton);
     }
 }

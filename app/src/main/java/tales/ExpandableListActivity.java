@@ -1,17 +1,23 @@
 package tales;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.nhaarman.listviewanimations.appearance.AnimationAdapter;
 import com.nhaarman.listviewanimations.appearance.simple.SwingRightInAnimationAdapter;
+import com.nhaarman.listviewanimations.itemmanipulation.DynamicListView;
+import com.nhaarman.listviewanimations.itemmanipulation.expandablelistitem.ExpandableListItemAdapter;
+import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.OnDismissCallback;
+import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.undo.SimpleSwipeUndoAdapter;
+import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.undo.TimedUndoAdapter;
 import com.octo.android.robospice.JacksonSpringAndroidSpiceService;
 import com.octo.android.robospice.SpiceManager;
 import com.octo.android.robospice.persistence.DurationInMillis;
@@ -19,6 +25,7 @@ import com.octo.android.robospice.persistence.exception.SpiceException;
 import com.octo.android.robospice.request.listener.RequestListener;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import farytale.fairytale.genius.com.fairytaleclient.R;
 import tales.act.MyExpandableListItemAdapter;
@@ -37,7 +44,7 @@ public class ExpandableListActivity extends MyListAct {
     private static final int INITIAL_DELAY_MILLIS = 500;
     // amount active tales in moment
     private static final int OPENED_TALES_LIMIT = 1;
-    private MyExpandableListItemAdapter mExpandableListItemAdapter;
+    private MyExpandableListItemAdapter mTaleAdapter;
 
     // request/response vars
     private static final String KEY_LAST_REQUEST_CACHE_KEY = "ExpandableListActivityRequestCacheKey";
@@ -48,20 +55,39 @@ public class ExpandableListActivity extends MyListAct {
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_dynamiclistview);
+
+        DynamicListView listView =
+                (DynamicListView) findViewById(R.id.activity_dynamiclistview_listview);
+
+        // Adding header to listview
+//        listView.addHeaderView(LayoutInflater.from(this)
+//                .inflate(R.layout.activity_dynamiclistview_header, listView, false));
 
         // creating main adapter and setting maximum opened tales in one moment
-        mExpandableListItemAdapter = new MyExpandableListItemAdapter(this, new ArrayList<Tale>());
-        mExpandableListItemAdapter.setLimit(OPENED_TALES_LIMIT);
+        mTaleAdapter = new MyExpandableListItemAdapter(this, new ArrayList<Tale>());
+        mTaleAdapter.setLimit(OPENED_TALES_LIMIT);
+
+        // creating the wrapping swipe/delete/undo adapter
+        SimpleSwipeUndoAdapter swipeUndoAdapter =
+                new TimedUndoAdapter(mTaleAdapter,
+                                    this,
+                                    new MyOnDismissCallback(mTaleAdapter));
 
         // setting the wrapping animation adapter and quantity of the opened elements
         AnimationAdapter animationAdapter =
-                new SwingRightInAnimationAdapter(mExpandableListItemAdapter);
-        animationAdapter.setAbsListView(getListView());
+                new SwingRightInAnimationAdapter(swipeUndoAdapter);
+        animationAdapter.setAbsListView(listView);
         assert animationAdapter.getViewAnimator() != null;
         animationAdapter.getViewAnimator().setInitialDelayMillis(INITIAL_DELAY_MILLIS);
-        getListView().setAdapter(animationAdapter);
+        listView.setAdapter(animationAdapter);
 
+        // Enabling swipe to dismiss
+        listView.enableSimpleSwipeUndo();
+
+        // Loading Tales
         performGetUserTalesRequest(true);
+
         Toast.makeText(this, "Tap on cards to expand or collapse them", Toast.LENGTH_LONG).show();
     }
 
@@ -92,10 +118,10 @@ public class ExpandableListActivity extends MyListAct {
             mLastRequestCacheKey = savedInstanceState
                     .getString(KEY_LAST_REQUEST_CACHE_KEY);
             mSpiceManager.addListenerIfPending(TaleList.class,
-                    mLastRequestCacheKey, new UserTalesRequestListener());
+                    mLastRequestCacheKey, new GetUserTalesRequestListener());
             mSpiceManager.getFromCache(TaleList.class,
                     mLastRequestCacheKey, DurationInMillis.ONE_MINUTE,
-                    new UserTalesRequestListener());
+                    new GetUserTalesRequestListener());
         }
     }
 
@@ -145,7 +171,7 @@ public class ExpandableListActivity extends MyListAct {
         GetUserTalesRequest request = new GetUserTalesRequest(serverAddress);
         mLastRequestCacheKey = isUsingCachedRequest ? request.createCacheKey() : null;
         mSpiceManager.execute(request, mLastRequestCacheKey,
-                DurationInMillis.ONE_MINUTE, new UserTalesRequestListener());
+                DurationInMillis.ONE_MINUTE, new GetUserTalesRequestListener());
     }
 
     private void performPostTaleRequest(Tale tale) {
@@ -155,7 +181,7 @@ public class ExpandableListActivity extends MyListAct {
         mSpiceManager.execute(postTaleRequest, new PostTaleListener());
     }
 
-    private class UserTalesRequestListener implements
+    private class GetUserTalesRequestListener implements
             RequestListener<TaleList> {
         @Override
         public void onRequestFailure(SpiceException e) {
@@ -171,9 +197,9 @@ public class ExpandableListActivity extends MyListAct {
             // taleList could be null just if contentManager.getFromCache(...)
             // doesn't return anything.
             if (taleList == null) return;
-            mExpandableListItemAdapter.clear();
-            mExpandableListItemAdapter.addAll(taleList);
-            mExpandableListItemAdapter.notifyDataSetChanged();
+            mTaleAdapter.clear();
+            mTaleAdapter.addAll(taleList);
+            mTaleAdapter.notifyDataSetChanged();
         }
     }
 
@@ -186,11 +212,40 @@ public class ExpandableListActivity extends MyListAct {
             Log.e(LOG_TAG, "Error during request: " + e.getLocalizedMessage());
         }
 
-        // user hat created tale, reload tales list
+        // user hat created new tale, reload tales list
         @Override
         public void onRequestSuccess(Tale tale) {
             Toast.makeText(ExpandableListActivity.this, "Tale created", Toast.LENGTH_SHORT).show();
             performGetUserTalesRequest(false);
+        }
+    }
+
+    private class MyOnDismissCallback implements OnDismissCallback {
+
+        private final ExpandableListItemAdapter mAdapter;
+
+        @Nullable
+        private Toast mToast;
+
+        public MyOnDismissCallback(ExpandableListItemAdapter adapter) {
+            mAdapter = adapter;
+        }
+
+        @Override
+        public void onDismiss(@NonNull ViewGroup viewGroup, @NonNull int[] positions) {
+            for (int position : positions) {
+                mAdapter.remove(position);
+            }
+
+            if (mToast != null) {
+                mToast.cancel();
+            }
+
+            mToast = Toast.makeText(
+                    ExpandableListActivity.this,
+                    getString((R.string.removed_positions), Arrays.toString(positions)),
+                    Toast.LENGTH_LONG);
+            mToast.show();
         }
     }
 }
