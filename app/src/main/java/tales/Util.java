@@ -24,6 +24,7 @@ public class Util {
                 + ":" +
                 SP.getString(
                     activity.getResources().getString(R.string.title_server_port),
-                    activity.getResources().getString(R.string.default_value_server_port));
+                    activity.getResources().getString(R.string.default_value_server_port))
+                + "/";
     }
 }

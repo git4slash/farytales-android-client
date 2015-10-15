@@ -11,7 +11,6 @@ import com.nhaarman.listviewanimations.itemmanipulation.expandablelistitem.Expan
 import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.undo.UndoAdapter;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import farytale.fairytale.genius.com.fairytaleclient.R;
 import tales.model.Tale;
@@ -25,7 +24,7 @@ public class MyExpandableListItemAdapter
         implements UndoAdapter{
 
     private final Context mContext;
-    private List<Tale> tales;
+    private static final boolean IS_SHOW_ALL = true;
 
     /*
      * This will create a new ExpandableListItemAdapter, providing a custom layout resource,
@@ -38,22 +37,27 @@ public class MyExpandableListItemAdapter
                 R.id.activity_expandablelistitem_card_title,
                 R.id.activity_expandablelistitem_card_content, items);
         this.mContext = context;
-//        if (items != null) {
-//            this.tales = items;
-//        } else {
-//            this.tales = new ArrayList<>();
-//            tales.add(new Tale("Waiting for stories from you", ""));
-//        }
-//        addAll(tales);
     }
 
     @NonNull
     @Override
-    public View getTitleView(final int position, final View convertView, @NonNull final ViewGroup parent) {
+    public View getTitleView(final int position, final View convertView,
+                             @NonNull final ViewGroup parent) {
+
         TextView tv = (TextView) convertView;
         if (tv == null) {
             tv = new TextView(mContext);
         }
+
+        if (IS_SHOW_ALL) {
+            final Tale tale = getItem(position);
+            tv.setText("id:" + tale.getId()
+                    + " name:" + tale.getName()
+                    + " \nuri:" + tale.getUri()
+            );
+            return tv;
+        }
+
         tv.setText(getItem(position).getName());
         return tv;
     }
@@ -65,8 +69,8 @@ public class MyExpandableListItemAdapter
         if (textView == null) {
             textView = new TextView(mContext);
         }
-
-        textView.setText(getItem(position).getText());
+        final Tale tale = getItem(position);
+        textView.setText(tale.getText());
 
         return textView;
     }

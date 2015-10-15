@@ -3,7 +3,6 @@ package tales;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -14,7 +13,6 @@ import android.widget.Toast;
 import com.nhaarman.listviewanimations.appearance.AnimationAdapter;
 import com.nhaarman.listviewanimations.appearance.simple.SwingRightInAnimationAdapter;
 import com.nhaarman.listviewanimations.itemmanipulation.DynamicListView;
-import com.nhaarman.listviewanimations.itemmanipulation.expandablelistitem.ExpandableListItemAdapter;
 import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.OnDismissCallback;
 import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.undo.SimpleSwipeUndoAdapter;
 import com.nhaarman.listviewanimations.itemmanipulation.swipedismiss.undo.TimedUndoAdapter;
@@ -25,13 +23,13 @@ import com.octo.android.robospice.persistence.exception.SpiceException;
 import com.octo.android.robospice.request.listener.RequestListener;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import farytale.fairytale.genius.com.fairytaleclient.R;
 import tales.act.MyExpandableListItemAdapter;
 import tales.act.MyListAct;
 import tales.model.Tale;
 import tales.model.TaleList;
+import tales.request.DeleteTaleRequest;
 import tales.request.GetUserTalesRequest;
 import tales.request.PostTaleRequest;
 
@@ -52,6 +50,9 @@ public class ExpandableListActivity extends MyListAct {
             new SpiceManager(JacksonSpringAndroidSpiceService.class);
     private String mLastRequestCacheKey;
 
+    // todo implement account logic
+    private static String userName = "dsyer";
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,14 +70,12 @@ public class ExpandableListActivity extends MyListAct {
         mTaleAdapter.setLimit(OPENED_TALES_LIMIT);
 
         // creating the wrapping swipe/delete/undo adapter
-        SimpleSwipeUndoAdapter swipeUndoAdapter =
-                new TimedUndoAdapter(mTaleAdapter,
-                                    this,
-                                    new MyOnDismissCallback(mTaleAdapter));
+        SimpleSwipeUndoAdapter mUndoAdapter =
+                new TimedUndoAdapter(mTaleAdapter, this, new MyOnDismissCallback());
 
         // setting the wrapping animation adapter and quantity of the opened elements
         AnimationAdapter animationAdapter =
-                new SwingRightInAnimationAdapter(swipeUndoAdapter);
+                new SwingRightInAnimationAdapter(mUndoAdapter);
         animationAdapter.setAbsListView(listView);
         assert animationAdapter.getViewAnimator() != null;
         animationAdapter.getViewAnimator().setInitialDelayMillis(INITIAL_DELAY_MILLIS);
@@ -145,6 +144,7 @@ public class ExpandableListActivity extends MyListAct {
                 Log.i(LOG_TAG, "Starting NewTaleActivity");
                 startActivityForResult(new Intent(this, NewTaleActivity.class),
                         REQUEST_CODE_CREATE_TALE);
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -167,7 +167,9 @@ public class ExpandableListActivity extends MyListAct {
 
     private void performGetUserTalesRequest(boolean isUsingCachedRequest) {
         // todo load from context user name
-        final String serverAddress = Util.currentServerProperty(this) + "/dsyer/tales";
+        final String serverAddress = Util.currentServerProperty(this)
+                + userName
+                + "/tales";
         GetUserTalesRequest request = new GetUserTalesRequest(serverAddress);
         mLastRequestCacheKey = isUsingCachedRequest ? request.createCacheKey() : null;
         mSpiceManager.execute(request, mLastRequestCacheKey,
@@ -175,10 +177,20 @@ public class ExpandableListActivity extends MyListAct {
     }
 
     private void performPostTaleRequest(Tale tale) {
-        final String serverAddress = Util.currentServerProperty(this);
-        final String request = serverAddress + "/dsyer/tales/";
+        final String request = Util.currentServerProperty(this)
+                + userName
+                + "/tales/";
         PostTaleRequest postTaleRequest = new PostTaleRequest(request, tale);
         mSpiceManager.execute(postTaleRequest, new PostTaleListener());
+    }
+
+    private void performDeleteTaleRequest(int position) {
+        final String request = Util.currentServerProperty(this)
+                + userName
+                + "/tales/"
+                + mTaleAdapter.getItem(position).getId();
+        mSpiceManager.execute(new DeleteTaleRequest(request),
+                              new DeleteTaleListener());
     }
 
     private class GetUserTalesRequestListener implements
@@ -222,19 +234,14 @@ public class ExpandableListActivity extends MyListAct {
 
     private class MyOnDismissCallback implements OnDismissCallback {
 
-        private final ExpandableListItemAdapter mAdapter;
-
-        @Nullable
         private Toast mToast;
 
-        public MyOnDismissCallback(ExpandableListItemAdapter adapter) {
-            mAdapter = adapter;
-        }
-
         @Override
-        public void onDismiss(@NonNull ViewGroup viewGroup, @NonNull int[] positions) {
+        public void onDismiss(@NonNull ViewGroup viewGroup,
+                              @NonNull int[] positions) {
             for (int position : positions) {
-                mAdapter.remove(position);
+                performDeleteTaleRequest(position);
+                mTaleAdapter.remove(position);
             }
 
             if (mToast != null) {
@@ -243,9 +250,27 @@ public class ExpandableListActivity extends MyListAct {
 
             mToast = Toast.makeText(
                     ExpandableListActivity.this,
-                    getString((R.string.removed_positions), Arrays.toString(positions)),
+                    getString((R.string.removed_positions)),
                     Toast.LENGTH_LONG);
             mToast.show();
+        }
+    }
+
+    private class DeleteTaleListener implements RequestListener<Void> {
+
+        @Override
+        public void onRequestFailure(SpiceException e) {
+            Toast.makeText(ExpandableListActivity.this, "Failed to delete tale"
+                    + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+            Log.e(LOG_TAG, "Error during request: " + e.getLocalizedMessage());
+        }
+
+        // tale deleted from server
+        @Override
+        public void onRequestSuccess(Void aVoid) {
+            Toast.makeText(ExpandableListActivity.this,
+                    R.string.removed_positions, Toast.LENGTH_LONG)
+                    .show();
         }
     }
 }

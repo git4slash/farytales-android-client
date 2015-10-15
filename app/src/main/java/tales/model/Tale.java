@@ -17,6 +17,13 @@ public class Tale implements Serializable {
         this.text = text;
     }
 
+    public Tale(Long id, String uri, String name, String text) {
+        this.id = id;
+        this.uri = uri;
+        this.name = name;
+        this.text = text;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }

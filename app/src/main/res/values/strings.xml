@@ -25,6 +25,7 @@
     <string name="textView_text_StoryText">Text</string>
     <string name="button_text_Create">Create</string>
     <string name="header">Header %d</string>
-    <string name="removed_positions">Tale %s removed</string>
+    <string name="removed_positions">Tale removed from list</string>
+    <string name="removed_from_server">Tale removed from server</string>
 
 </resources>
