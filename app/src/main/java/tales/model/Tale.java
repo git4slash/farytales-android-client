@@ -5,6 +5,7 @@ import java.io.Serializable;
 public class Tale implements Serializable {
 
     private Long id;
+    public Account account;
 
     public String uri;
     public String name;
@@ -22,6 +23,14 @@ public class Tale implements Serializable {
         this.uri = uri;
         this.name = name;
         this.text = text;
+    }
+
+    public Tale(Long id, String uri, String name, String text, Account account) {
+        this.id = id;
+        this.uri = uri;
+        this.name = name;
+        this.text = text;
+        this.account = account;
     }
 
     public void setId(Long id) {

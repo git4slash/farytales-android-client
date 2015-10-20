@@ -41,7 +41,6 @@ public class ExpandableListActivity extends MyListAct {
 
     private static final int INITIAL_DELAY_MILLIS = 500;
     // amount active tales in moment
-    private static final int OPENED_TALES_LIMIT = 1;
     private MyExpandableListItemAdapter mTaleAdapter;
 
     // request/response vars
@@ -67,7 +66,6 @@ public class ExpandableListActivity extends MyListAct {
 
         // creating main adapter and setting maximum opened tales in one moment
         mTaleAdapter = new MyExpandableListItemAdapter(this, new ArrayList<Tale>());
-        mTaleAdapter.setLimit(OPENED_TALES_LIMIT);
 
         // creating the wrapping swipe/delete/undo adapter
         SimpleSwipeUndoAdapter mUndoAdapter =
